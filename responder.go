@@ -136,7 +136,7 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 // NoContent returns a HTTP 204 "No Content" response.
 func NoContent(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(204)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
@@ -147,7 +147,7 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	ctx := r.Context()
 	for {

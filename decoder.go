@@ -1,13 +1,16 @@
 package render
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/json-iterator/go"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set render.Decode to another function with the

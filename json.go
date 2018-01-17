@@ -13,6 +13,7 @@ func init() {
 	json = new(jsonStd)
 }
 
+// RegisterJSONIterator if want to use `github.com/json-iterator/go`, please call RegisterJSONIterator first
 func RegisterJSONIterator() {
 	json = new(jsonIterator)
 }

@@ -34,6 +34,7 @@ type jsonEncoder struct {
 	iteratorEncoder *jsoniter.Encoder
 }
 
+// std json that impl jsonDecodeEncode
 type jsonStd struct {
 }
 
@@ -55,6 +56,7 @@ func (j jsonStd) Marshal(v interface{}) ([]byte, error) {
 	return jsonstd.Marshal(v)
 }
 
+// iterator json that impl jsonDecodeEncode
 type jsonIterator struct {
 }
 

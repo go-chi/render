@@ -1,12 +1,13 @@
 package render
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/go-chi/render/json"
 )
 
 // Decode is a package-level variable set to our default Decoder. We do this

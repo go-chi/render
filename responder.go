@@ -3,11 +3,12 @@ package render
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"net/http"
 	"reflect"
+
+	"github.com/go-chi/render/json"
 )
 
 // M is a convenience alias for quickly building a map structure that is going

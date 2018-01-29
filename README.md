@@ -22,3 +22,10 @@ example which uses the latest chi/render sub-pkg.
 
 All feedback is welcome, thank you!
 
+## Build with [jsoniter](https://github.com/json-iterator/go)
+
+The `render` package use `encoding/json` as default json package but you can change to [jsoniter](https://github.com/json-iterator/go) by build from other tags.
+
+```sh
+$ go build -tags=jsoniter .
+```

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"gopkg.in/go-playground/validator.v9"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -30,6 +31,11 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 		err = errors.New("render: unable to automatically decode the request content type")
 	}
 
+	// validate
+	vali := validator.New()
+	if err := vali.Struct(v); err != nil {
+		return err
+	}
 	return err
 }
 

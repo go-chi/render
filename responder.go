@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sync"
 )
 
 // M is a convenience alias for quickly building a map structure that is going
@@ -88,10 +89,17 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 	w.Write([]byte(v))
 }
 
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
+
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
 // Content-Type as application/json.
 func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
-	buf := &bytes.Buffer{}
+	buf := bufferPool.Get().(*bytes.Buffer)
+	defer bufferPool.Put(buf)
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
 	if err := enc.Encode(v); err != nil {
@@ -103,7 +111,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}
-	w.Write(buf.Bytes())
+	buf.WriteTo(w)
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It

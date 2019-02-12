@@ -15,6 +15,11 @@ type Binder interface {
 	Bind(r *http.Request) error
 }
 
+// Event interface for event stream responses.
+type Event interface {
+	GetID() string
+}
+
 // Bind decodes a request body and executes the Binder method of the
 // payload structure.
 func Bind(r *http.Request, v Binder) error {

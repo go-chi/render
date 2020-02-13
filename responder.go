@@ -135,7 +135,7 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 }
 
 // NoContent returns a HTTP 204 "No Content" response.
-func NoContent(w http.ResponseWriter, r *http.Request) {
+func NoContent(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(204)
 }
 

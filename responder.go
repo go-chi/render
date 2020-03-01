@@ -127,6 +127,10 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 }
 
+func setNosniff(w http.ResponseWriter) {
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+}
+
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
 func PlainText(w http.ResponseWriter, r *http.Request, v interface{}) error {
@@ -147,6 +151,7 @@ func PlainText(w http.ResponseWriter, r *http.Request, v interface{}) error {
 		return ErrCanNotEncodeObject
 	}
 
+	setNosniff(w)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
@@ -157,7 +162,8 @@ func PlainText(w http.ResponseWriter, r *http.Request, v interface{}) error {
 
 // Data writes raw bytes to the response, setting the Content-Type as
 // application/octet-stream.
-func Data(w http.ResponseWriter, r *http.Request, v interface{}) error {
+func Data(w http.ResponseWriter, r *http.Request, v []byte) {
+	setNosniff(w)
 	w.Header().Set("Content-Type", "application/octet-stream")
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
@@ -212,6 +218,7 @@ func HTML(w http.ResponseWriter, r *http.Request, v interface{}) error {
 		return ErrCanNotEncodeObject
 	}
 
+	setNosniff(w)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
@@ -229,7 +236,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	if err := enc.Encode(v); err != nil {
 		return fmt.Errorf("JSON encode: %w", err)
 	}
-
+	setNosniff(w)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
@@ -246,7 +253,7 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	if err != nil {
 		return fmt.Errorf("XML marshal: %w", err)
 	}
-
+	setNosniff(w)
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)

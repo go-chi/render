@@ -190,7 +190,15 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 				}
 				continue
 			}
-			w.Write([]byte(fmt.Sprintf("event: data\ndata: %s\n\n", bytes)))
+			var resp string
+			if ev, ok := v.(Event); ok {
+				id := ev.GetID()
+				if id != "" {
+					resp += fmt.Sprintf("id: %s\n", id)
+				}
+			}
+			resp += fmt.Sprintf("event: data\ndata: %s\n\n", bytes)
+			w.Write([]byte(resp))
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}

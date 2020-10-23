@@ -7,6 +7,7 @@ import (
 
 // Renderer interface for managing response payloads.
 type Renderer interface {
+	// Render
 	Render(w http.ResponseWriter, r *http.Request) error
 }
 

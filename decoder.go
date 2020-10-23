@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"sort"
+	"sync"
 )
 
 // Decode is a package-level variable set to our default Decoder. We do this
@@ -17,20 +19,44 @@ import (
 // bytes allowed to be read from the request body.
 var Decode = DefaultDecoder
 
-func DefaultDecoder(r *http.Request, v interface{}) error {
-	var err error
+type DecodeFunc func(r io.Reader, v interface{}) error
 
-	switch GetRequestContentType(r) {
-	case ContentTypeJSON:
-		err = DecodeJSON(r.Body, v)
-	case ContentTypeXML:
-		err = DecodeXML(r.Body, v)
-	// case ContentTypeForm: // TODO
-	default:
-		err = errors.New("render: unable to automatically decode the request content type")
+var decodeMapperLck sync.RWMutex
+
+// decodeMapper will map the generic content type to a decoder
+var decodeMapper = map[ContentType]DecodeFunc{
+	ContentTypeJSON: DecodeJSON,
+	ContentTypeXML:  DecodeXML,
+}
+
+// SetDecoder will set the decoder for the given content type.
+// Use a nil DecodeFunc to unset a content type
+func SetDecoder(contentType ContentType, decoder DecodeFunc) {
+	decodeMapperLck.Lock()
+	defer decodeMapperLck.Unlock()
+	decodeMapper[contentType] = decoder
+}
+
+// SupportedDecoders returns a ContentTypeSet of the configured Content types with decoders
+func SupportedDecoders() *ContentTypeSet {
+	strs := make([]string, 0, len(decodeMapper))
+	decodeMapperLck.RLock()
+	defer decodeMapperLck.RUnlock()
+	for str := range decodeMapper {
+		strs = append(strs, string(str))
 	}
+	sort.Strings(strs)
+	return NewContentTypeSet(strs...)
+}
 
-	return err
+func DefaultDecoder(r *http.Request, v interface{}) error {
+	decodeMapperLck.RLock()
+	defer decodeMapperLck.RUnlock()
+
+	if decoder := decodeMapper[GetRequestContentType(r, ContentTypeNone)]; decoder != nil {
+		return decoder(r.Body, v)
+	}
+	return errors.New("render: unable to automatically decode the request content type")
 }
 
 func DecodeJSON(r io.Reader, v interface{}) error {

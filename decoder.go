@@ -3,7 +3,7 @@ package render
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -53,10 +53,12 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 	decodeMapperLck.RLock()
 	defer decodeMapperLck.RUnlock()
 
-	if decoder := decodeMapper[GetRequestContentType(r, ContentTypeNone)]; decoder != nil {
+	ct := GetRequestContentType(r, ContentTypeNone)
+
+	if decoder := decodeMapper[ct]; decoder != nil {
 		return decoder(r.Body, v)
 	}
-	return errors.New("render: unable to automatically decode the request content type")
+	return fmt.Errorf("render: unable to automatically decode the request content type: %s", ct)
 }
 
 func DecodeJSON(r io.Reader, v interface{}) error {

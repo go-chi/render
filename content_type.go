@@ -81,6 +81,42 @@ func (set *ContentTypeSet) Has(contentType ContentType) bool {
 	return false
 }
 
+// StringHas is like Has but first parses the contentType out if the
+// mediaType using mime.ParseMediaType; parse errors return false
+func (set *ContentTypeSet) StringHas(mediaType string) bool {
+	ct, _, err := mime.ParseMediaType(mediaType)
+	if err != nil {
+		return false
+	}
+	return set.Has(ContentType(ct))
+}
+
+// SetOfContentTypes returns a set of the given ContentTypes
+func SetOfContentTypes(types ...ContentType) *ContentTypeSet {
+	if len(types) == 0 {
+		return nil
+	}
+	set := &ContentTypeSet{
+		set: make([]ContentType, 0, len(types)),
+		pos: -1,
+	}
+allTypes:
+	for _, t := range types {
+		// Let's make sure we have not seen this type before.
+		for _, tt := range set.set {
+			if tt == t {
+				// Don't add it to the set, already exists
+				continue allTypes
+			}
+		}
+		set.set = append(set.set, t)
+	}
+	if len(set.set) == 0 {
+		return nil
+	}
+	return set
+}
+
 // NewContentTypeSet returns a new set of ContentTypes based on the set of strings passed in. mime.ParseMediaType is
 // used to prase each string. Empty strings and strings that do not parse are ignored.
 func NewContentTypeSet(types ...string) *ContentTypeSet {
@@ -113,10 +149,25 @@ allTypes:
 	return set
 }
 
+// ContentTypeFromString will call mime.ParseMediaType to get the content type out
+func ContentTypeFromString(mediaType string) (ContentType, error) {
+	mediaType, _, err := mime.ParseMediaType(mediaType)
+	return ContentType(mediaType), err
+}
+
 // ContentType is an enumeration of common HTTP content types.
 type ContentType string
 
 func (contentType ContentType) String() string { return string(contentType) }
+
+// Is the content type a match for the given mime type
+func (contentType ContentType) Is(mimeType string) bool {
+	mediaType, _, err := mime.ParseMediaType(mimeType)
+	if err != nil {
+		return false
+	}
+	return string(contentType) == mediaType
+}
 
 // GetContentType returns the base mimetype from the string. This uses mime.ParseMediaType to
 // actually parse the string.
@@ -128,6 +179,7 @@ func GetContentType(str string) (ContentType, error) {
 // ContentTypes that are commonly used
 const (
 	ContentTypeNone        = ContentType("")
+	ContentTypeDefault     = ContentType("*/*")
 	ContentTypeJSON        = ContentType("application/json")
 	ContentTypeData        = ContentType("application/octet-stream")
 	ContentTypeForm        = ContentType("multipart/form-data")

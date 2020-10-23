@@ -19,6 +19,10 @@ import (
 // out to a responder. Just a short-hand.
 type M map[string]interface{}
 
+// ErrCanNotEncodeObject should be returned by RespondFunc if the Responder should
+// try a different content type, as we don't know how to respond with this object
+var ErrCanNotEncodeObject = errors.New("error can not encode object")
+
 // Respond is a package-level variable set to our default Responder. We do this
 // because it allows you to set render.Respond to another function with the
 // same function signature, while also utilizing the render.Responder() function
@@ -37,6 +41,7 @@ var respondMapperLck sync.RWMutex
 
 // respondMapper will map the generic content type to a respond
 var respondMapper = map[ContentType]RespondFunc{
+	ContentTypeDefault:     JSON,
 	ContentTypeJSON:        JSON,
 	ContentTypeXML:         XML,
 	ContentTypeEventStream: channelEventStream,
@@ -106,12 +111,18 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 		}
 		if fn, ok := respondMapper[acceptedTypes.Type()]; ok {
 			if err = fn(w, r, v); err != nil {
+
+				if errors.Is(err, ErrCanNotEncodeObject) {
+					// Let's try the next content type
+					continue
+				}
+
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 			return
 		}
 	}
-	if err = respondMapper[ContentTypeJSON](w, r, v); err != nil {
+	if err = respondMapper[ContentTypeDefault](w, r, v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -120,11 +131,6 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 // text/plain.
 func PlainText(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	var txt string
-
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
 
 	switch vv := v.(type) {
 	case encoding.TextMarshaler:
@@ -138,7 +144,12 @@ func PlainText(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	case fmt.Stringer:
 		txt = vv.String()
 	default:
-		return errors.New("Unable to encode as plain text")
+		return ErrCanNotEncodeObject
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
 	}
 	w.Write([]byte(txt))
 	return nil
@@ -186,11 +197,6 @@ func Data(w http.ResponseWriter, r *http.Request, v interface{}) error {
 func HTML(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	var txt string
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
-
 	switch vv := v.(type) {
 	case encoding.TextMarshaler:
 		btxt, err := vv.MarshalText()
@@ -203,7 +209,12 @@ func HTML(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	case fmt.Stringer:
 		txt = vv.String()
 	default:
-		return errors.New("Unable to encode as plain text")
+		return ErrCanNotEncodeObject
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
 	}
 	w.Write([]byte(txt))
 	return nil

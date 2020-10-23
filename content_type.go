@@ -2,6 +2,7 @@ package render
 
 import (
 	"context"
+	"fmt"
 	"mime"
 	"net/http"
 	"strings"
@@ -15,6 +16,17 @@ var (
 type ContentTypeSet struct {
 	set []ContentType
 	pos int
+}
+
+func (set *ContentTypeSet) String() string {
+	if set == nil || len(set.set) == 0 {
+		return ""
+	}
+	strs := make([]string, len(set.set))
+	for i := range set.set {
+		strs[i] = string(set.set[i])
+	}
+	return strings.Join(strs, ",")
 }
 
 // Next returns if there is another content type waiting, and if there is
@@ -104,6 +116,8 @@ allTypes:
 // ContentType is an enumeration of common HTTP content types.
 type ContentType string
 
+func (contentType ContentType) String() string { return string(contentType) }
+
 // GetContentType returns the base mimetype from the string. This uses mime.ParseMediaType to
 // actually parse the string.
 func GetContentType(str string) (ContentType, error) {
@@ -131,6 +145,20 @@ func SetContentType(contentType ContentType) func(next http.Handler) http.Handle
 			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(fn)
+	}
+}
+
+func AllowedContentTypes(contentTypes ContentTypeSet) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ct, _ := GetContentType(r.Header.Get("Content-Type"))
+			if !contentTypes.Has(ct) {
+				http.Error(w,
+					fmt.Sprintf("invalid content type: accepted types are:%v", contentTypes),
+					http.StatusNotAcceptable,
+				)
+			}
+		})
 	}
 }
 

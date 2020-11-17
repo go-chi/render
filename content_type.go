@@ -217,7 +217,7 @@ func AllowedContentTypes(contentTypes ContentTypeSet) func(next http.Handler) ht
 // GetRequestContentType is a helper function that returns ContentType based on
 // context or "content-Type" request header.
 func GetRequestContentType(r *http.Request, dflt ContentType) ContentType {
-	if contentType, ok := r.Context().Value(ContentTypeCtxKey).(ContentType); ok {
+	if contentType, ok := r.Context().Value(ContentTypeCtxKey).(ContentType); ok && contentType != "" {
 		return contentType
 	}
 	ct, err := GetContentType(r.Header.Get("Content-Type"))

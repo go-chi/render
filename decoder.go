@@ -58,7 +58,7 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 	if decoder := decodeMapper[ct]; decoder != nil {
 		return decoder(r.Body, v)
 	}
-	return fmt.Errorf("render: unable to automatically decode the request content type: %s", ct)
+	return fmt.Errorf("render: unable to automatically decode the request content type: '%s'", ct)
 }
 
 func DecodeJSON(r io.Reader, v interface{}) error {

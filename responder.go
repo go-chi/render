@@ -32,7 +32,7 @@ func Status(r *http.Request, status int) {
 	*r = *r.WithContext(context.WithValue(r.Context(), StatusCtxKey, status))
 }
 
-// Respond handles streaming JSON and XML responses, automatically setting the
+// DefaultResponder handles streaming JSON and XML responses, automatically setting the
 // Content-Type based on request headers. It will default to a JSON response.
 func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 	if v != nil {
@@ -136,7 +136,7 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 // NoContent returns a HTTP 204 "No Content" response.
 func NoContent(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(204)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
@@ -153,7 +153,7 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 		w.Header().Set("Connection", "keep-alive")
 	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	ctx := r.Context()
 	for {
@@ -209,7 +209,7 @@ func channelIntoSlice(w http.ResponseWriter, r *http.Request, from interface{}) 
 			{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(from)},
 		}); chosen {
 		case 0: // equivalent to: case <-ctx.Done()
-			http.Error(w, "Server Timeout", 504)
+			http.Error(w, "Server Timeout", http.StatusGatewayTimeout)
 			return nil
 
 		default: // equivalent to: case v, ok := <-stream

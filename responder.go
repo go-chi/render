@@ -209,7 +209,7 @@ func channelIntoSlice(w http.ResponseWriter, r *http.Request, from interface{}) 
 			{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(from)},
 		}); chosen {
 		case 0: // equivalent to: case <-ctx.Done()
-			http.Error(w, "Server Timeout", 504)
+			http.Error(w, "Server Timeout", http.StatusGatewayTimeout)
 			return nil
 
 		default: // equivalent to: case v, ok := <-stream

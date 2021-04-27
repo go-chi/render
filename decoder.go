@@ -40,18 +40,18 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 
 // DecodeJSON decodes a given reader into an interface using the json decoder.
 func DecodeJSON(r io.Reader, v interface{}) error {
-	defer io.Copy(ioutil.Discard, r)
+	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return json.NewDecoder(r).Decode(v)
 }
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.
 func DecodeXML(r io.Reader, v interface{}) error {
-	defer io.Copy(ioutil.Discard, r)
+	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return xml.NewDecoder(r).Decode(v)
 }
 
 // DecodeForm decodes a given reader into an interface using the form decoder.
 func DecodeForm(r io.Reader, v interface{}) error {
-	decoder := form.NewDecoder(r)
+	decoder := form.NewDecoder(r) //nolint:errcheck
 	return decoder.Decode(v)
 }

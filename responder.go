@@ -66,7 +66,7 @@ func PlainText(w http.ResponseWriter, r *http.Request, v string) {
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}
-	w.Write([]byte(v))
+	w.Write([]byte(v)) //nolint:errcheck
 }
 
 // Data writes raw bytes to the response, setting the Content-Type as
@@ -76,7 +76,7 @@ func Data(w http.ResponseWriter, r *http.Request, v []byte) {
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}
-	w.Write(v)
+	w.Write(v) //nolint:errcheck
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
@@ -85,7 +85,7 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}
-	w.Write([]byte(v))
+	w.Write([]byte(v)) //nolint:errcheck
 }
 
 // JSON marshals 'v' to JSON, automatically escaping HTML and setting the
@@ -103,7 +103,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}
-	w.Write(buf.Bytes())
+	w.Write(buf.Bytes()) //nolint:errcheck
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It
@@ -128,10 +128,10 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 	if !bytes.Contains(b[:findHeaderUntil], []byte("<?xml")) {
 		// No header found. Print it out first.
-		w.Write([]byte(xml.Header))
+		w.Write([]byte(xml.Header)) //nolint:errcheck
 	}
 
-	w.Write(b)
+	w.Write(b) //nolint:errcheck
 }
 
 // NoContent returns a HTTP 204 "No Content" response.
@@ -162,12 +162,12 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 			{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(v)},
 		}); chosen {
 		case 0: // equivalent to: case <-ctx.Done()
-			w.Write([]byte("event: error\ndata: {\"error\":\"Server Timeout\"}\n\n"))
+			w.Write([]byte("event: error\ndata: {\"error\":\"Server Timeout\"}\n\n")) //nolint:errcheck
 			return
 
 		default: // equivalent to: case v, ok := <-stream
 			if !ok {
-				w.Write([]byte("event: EOF\n\n"))
+				w.Write([]byte("event: EOF\n\n")) //nolint:errcheck
 				return
 			}
 			v := recv.Interface()
@@ -184,13 +184,13 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 			bytes, err := json.Marshal(v)
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("event: error\ndata: {\"error\":\"%v\"}\n\n", err)))
+				w.Write([]byte(fmt.Sprintf("event: error\ndata: {\"error\":\"%v\"}\n\n", err))) //nolint:errcheck
 				if f, ok := w.(http.Flusher); ok {
 					f.Flush()
 				}
 				continue
 			}
-			w.Write([]byte(fmt.Sprintf("event: data\ndata: %s\n\n", bytes)))
+			w.Write([]byte(fmt.Sprintf("event: data\ndata: %s\n\n", bytes))) //nolint:errcheck
 			if f, ok := w.(http.Flusher); ok {
 				f.Flush()
 			}

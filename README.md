@@ -25,4 +25,3 @@ request bodies. Please have a look at the [rest](https://github.com/go-chi/chi/b
 example which uses the latest chi/render sub-pkg.
 
 All feedback is welcome, thank you!
-

@@ -70,20 +70,39 @@ func renderer(w http.ResponseWriter, r *http.Request, v Renderer) error {
 		return nil
 	}
 
-	// For structs, we call Render on each field that implements Renderer
-	for i := 0; i < rv.NumField(); i++ {
-		f := rv.Field(i)
+	cr := func(f reflect.Value) error {
 		if f.Type().Implements(rendererType) {
-
 			if isNil(f) {
-				continue
+				return nil
 			}
 
 			fv := f.Interface().(Renderer)
 			if err := renderer(w, r, fv); err != nil {
 				return err
 			}
+		} else {
+		}
+		return nil
+	}
 
+	// For structs, we call Render on each field that implements Renderer
+	for i := 0; i < rv.NumField(); i++ {
+		f := rv.Field(i)
+
+		if f.Kind() == reflect.Slice {
+			for j := 0; j < f.Len(); j++ {
+				g := f.Index(j)
+
+				err := cr(g)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			err := cr(f)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

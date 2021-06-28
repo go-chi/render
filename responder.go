@@ -88,12 +88,11 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 	w.Write([]byte(v)) //nolint:errcheck
 }
 
-// JSON marshals 'v' to JSON, automatically escaping HTML and setting the
-// Content-Type as application/json.
-func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
+func marshalJSON(w http.ResponseWriter, r *http.Request, v interface{}, prefix string, indent string) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
+	enc.SetIndent(prefix, indent)
 	if err := enc.Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -104,6 +103,19 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 		w.WriteHeader(status)
 	}
 	w.Write(buf.Bytes()) //nolint:errcheck
+}
+
+
+// JSON marshals 'v' to JSON, automatically escaping HTML and setting the
+// Content-Type as application/json.
+func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
+	marshalJSON(w, r, v, "", "")
+}
+
+// JSON marshals 'v' to JSON, automatically escaping HTML, formatted with 
+// the specified indentation and setting the Content-Type as application/json.
+func JSONIndent(w http.ResponseWriter, r *http.Request, v interface{}, prefix string, indent string) {
+	marshalJSON(w, r, v, prefix, indent)
 }
 
 // XML marshals 'v' to JSON, setting the Content-Type as application/xml. It

@@ -1,14 +1,12 @@
 package render
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"errors"
+	"github.com/ajg/form"
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/ajg/form"
 )
 
 // Decode is a package-level variable set to our default Decoder. We do this
@@ -41,7 +39,7 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 // DecodeJSON decodes a given reader into an interface using the json decoder.
 func DecodeJSON(r io.Reader, v interface{}) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
-	return json.NewDecoder(r).Decode(v)
+	return jsonMarshaller.Decode(r, v)
 }
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.

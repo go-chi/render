@@ -39,9 +39,16 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 }
 
 // DecodeJSON decodes a given reader into an interface using the json decoder.
-func DecodeJSON(r io.Reader, v interface{}) error {
+// Strict is used to call DisallowUnknownFields on the decoder and is false
+// by default
+func DecodeJSON(r io.Reader, v interface{}, strict ...bool) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
-	return json.NewDecoder(r).Decode(v)
+	dec := json.NewDecoder(r)
+	// Check if strict is set and is true
+	if len(strict) > 0 && strict[0] {
+		dec.DisallowUnknownFields()
+	}
+	return dec.Decode(v)
 }
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.

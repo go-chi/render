@@ -3,7 +3,6 @@ package render
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -92,7 +91,7 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 // Content-Type as application/json.
 func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
+	enc := jsonMarshaller.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
 	if err := enc.Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -182,7 +181,7 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 				}
 			}
 
-			bytes, err := json.Marshal(v)
+			bytes, err := jsonMarshaller.Marshal(v)
 			if err != nil {
 				w.Write([]byte(fmt.Sprintf("event: error\ndata: {\"error\":\"%v\"}\n\n", err))) //nolint:errcheck
 				if f, ok := w.(http.Flusher); ok {

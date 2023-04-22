@@ -20,13 +20,15 @@ type Encoder interface {
 }
 
 // Package-level variables for encoding the supported formats. They are set to
-// our default implementations. By setting render.Encode{JSON,XML,Form} you can
-// customize Encoding (e.g. you might want to configure the JSON-encoder)
-// TODO document type constraints
+// our default implementations. By setting
+// render.Encode{JSON,XML,Data,PlainText} you can customize Encoding (e.g. you
+// might want to configure the JSON-encoder)
 var (
 	EncoderJSON      Encoder = EncodeJSON{}
 	EncoderXML       Encoder = EncodeXML{}
+	// EncoderData.Decode(w, req, v): v must be []byte
 	EncoderData      Encoder = EncodeData{}
+	// EncoderPlainText.Decode(w, req, v): v must be string
 	EncoderPlainText Encoder = EncodePlainText{}
 )
 
@@ -83,6 +85,7 @@ type EncodePlainText struct{}
 
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
+// vi has to be string
 func (EncodePlainText) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
 	v, ok := vi.(string)
 	if !ok {
@@ -96,11 +99,23 @@ func (EncodePlainText) Encode(w http.ResponseWriter, r *http.Request, vi interfa
 	return nil
 }
 
-// TODO backwards compatible
+// PlainText writes a string to the response, setting the Content-Type as
+// text/plain.
+//
+// Deprecated: EncoderPlainText.Encode() should be used.
+func PlainText(w http.ResponseWriter, r *http.Request, v string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+	w.Write([]byte(v)) //nolint:errcheck
+}
+
 type EncodeData struct{}
 
 // Data writes raw bytes to the response, setting the Content-Type as
 // application/octet-stream.
+// vi has to be []byte
 func (EncodeData) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
 	v, ok := vi.([]byte)
 	if !ok {
@@ -114,10 +129,22 @@ func (EncodeData) Encode(w http.ResponseWriter, r *http.Request, vi interface{})
 	return nil
 }
 
-// TODO backwards compatible
+// Data writes raw bytes to the response, setting the Content-Type as
+// application/octet-stream.
+//
+// Deprecated: EncoderXML.Encode() should be used.
+func Data(w http.ResponseWriter, r *http.Request, v []byte) {
+	w.Header().Set("Content-Type", "application/octet-stream")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+	w.Write(v) //nolint:errcheck
+}
+
 type EncodeHTML struct{}
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
+// vi has to be a string.
 func (EncodeHTML) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
 	v, ok := vi.(string)
 	if !ok {
@@ -129,6 +156,17 @@ func (EncodeHTML) Encode(w http.ResponseWriter, r *http.Request, vi interface{})
 	}
 	w.Write([]byte(v)) //nolint:errcheck
 	return nil
+}
+
+// HTML writes a string to the response, setting the Content-Type as text/html.
+//
+// Deprecated: EncoderHTML.Encode() should be used.
+func HTML(w http.ResponseWriter, r *http.Request, v string) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+	w.Write([]byte(v)) //nolint:errcheck
 }
 
 type EncodeJSON struct{}
@@ -150,6 +188,27 @@ func (EncodeJSON) Encode(w http.ResponseWriter, r *http.Request, v interface{}) 
 	}
 	w.Write(buf.Bytes()) //nolint:errcheck
 	return nil
+}
+
+
+// JSON marshals 'v' to JSON, automatically escaping HTML and setting the
+// Content-Type as application/json.
+//
+// Deprecated: EncoderJSON.Encode() should be used.
+func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(true)
+	if err := enc.Encode(v); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+	w.Write(buf.Bytes()) //nolint:errcheck
 }
 
 type EncodeXML struct{}
@@ -181,6 +240,36 @@ func (EncodeXML) Encode(w http.ResponseWriter, r *http.Request, v interface{}) e
 
 	w.Write(b) //nolint:errcheck
 	return nil
+}
+
+// XML marshals 'v' to XML, setting the Content-Type as application/xml. It
+// will automatically prepend a generic XML header (see encoding/xml.Header) if
+// one is not found in the first 100 bytes of 'v'.
+//
+// Deprecated: EncoderXML.Encode() should be used.
+func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
+	b, err := xml.Marshal(v)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+
+	// Try to find <?xml header in first 100 bytes (just in case there're some XML comments).
+	findHeaderUntil := len(b)
+	if findHeaderUntil > 100 {
+		findHeaderUntil = 100
+	}
+	if !bytes.Contains(b[:findHeaderUntil], []byte("<?xml")) {
+		// No header found. Print it out first.
+		w.Write([]byte(xml.Header)) //nolint:errcheck
+	}
+
+	w.Write(b) //nolint:errcheck
 }
 
 // NoContent returns a HTTP 204 "No Content" response.

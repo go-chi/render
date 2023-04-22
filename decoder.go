@@ -20,11 +20,10 @@ type Decoder interface {
 // Package-level variables for decoding the supported formats. They are set to
 // our default implementations. By setting render.Decode{JSON,XML,Form} you can
 // customize Decoding (e.g. you might want to configure the JSON-decoder)
-// TODO documentation
 var (
-	DecoderJSON Decoder = DecodeJSON{}
-	DecoderXML  Decoder = DecodeXML{}
-	DecoderForm Decoder = DecodeForm{}
+	DecoderJSON Decoder = DecodeJSONInter{}
+	DecoderXML  Decoder = DecodeXMLInter{}
+	DecoderForm Decoder = DecodeFormInter{}
 )
 
 // Decode is a package-level variable set to our default Decoder. We do this
@@ -54,26 +53,50 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 	return err
 }
 
-type DecodeJSON struct{}
+type DecodeJSONInter struct{}
 
 // DecodeJSON decodes a given reader into an interface using the json decoder.
-func (DecodeJSON) Decode(r io.Reader, req *http.Request, v interface{}) error {
+func (DecodeJSONInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return json.NewDecoder(r).Decode(v)
 }
 
-type DecodeXML struct{}
+// DecodeJSON decodes a given reader into an interface using the json decoder.
+//
+// Deprecated: DecoderJSON.Decode() should be used.
+func DecodeJSON(r io.Reader, v interface{}) error {
+	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
+	return json.NewDecoder(r).Decode(v)
+}
+
+type DecodeXMLInter struct{}
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.
-func (DecodeXML) Decode(r io.Reader, req *http.Request, v interface{}) error {
+func (DecodeXMLInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return xml.NewDecoder(r).Decode(v)
 }
 
-type DecodeForm struct{}
+// DecodeXML decodes a given reader into an interface using the xml decoder.
+//
+// Deprecated: DecoderXML.Decode() should be used.
+func DecodeXML(r io.Reader, v interface{}) error {
+	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
+	return xml.NewDecoder(r).Decode(v)
+}
+
+type DecodeFormInter struct{}
 
 // DecodeForm decodes a given reader into an interface using the form decoder.
-func (DecodeForm) Decode(r io.Reader, req *http.Request, v interface{}) error {
+func (DecodeFormInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
+	decoder := form.NewDecoder(r) //nolint:errcheck
+	return decoder.Decode(v)
+}
+
+// DecodeForm decodes a given reader into an interface using the form decoder.
+//
+// Deprecated: DecoderForm.Decode() should be used.
+func DecodeForm(r io.Reader, v interface{}) error {
 	decoder := form.NewDecoder(r) //nolint:errcheck
 	return decoder.Decode(v)
 }

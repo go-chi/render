@@ -14,6 +14,7 @@ import (
 // Decoder is a generic interface to decode arbitrary data from a reader `r` to
 // a value `v`.
 type Decoder interface {
+	// Decodes a given reader into an interface
 	Decode(r io.Reader, req *http.Request, v interface{}) error
 }
 
@@ -55,7 +56,7 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 
 type DecodeJSONInter struct{}
 
-// DecodeJSON decodes a given reader into an interface using the json decoder.
+// Decodes a given reader into an interface using the json decoder.
 func (DecodeJSONInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return json.NewDecoder(r).Decode(v)
@@ -71,7 +72,7 @@ func DecodeJSON(r io.Reader, v interface{}) error {
 
 type DecodeXMLInter struct{}
 
-// DecodeXML decodes a given reader into an interface using the xml decoder.
+// Decodes a given reader into an interface using the xml decoder.
 func (DecodeXMLInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
 	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
 	return xml.NewDecoder(r).Decode(v)
@@ -87,7 +88,7 @@ func DecodeXML(r io.Reader, v interface{}) error {
 
 type DecodeFormInter struct{}
 
-// DecodeForm decodes a given reader into an interface using the form decoder.
+// Decodes a given reader into an interface using the form decoder.
 func (DecodeFormInter) Decode(r io.Reader, req *http.Request, v interface{}) error {
 	decoder := form.NewDecoder(r) //nolint:errcheck
 	return decoder.Decode(v)

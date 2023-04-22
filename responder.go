@@ -16,6 +16,7 @@ var ErrInvalidType error = errors.New("Invalid Type passed")
 // Encoder is a generic interface to encode arbitrary data from value `v`  to a
 // reader `r`
 type Encoder interface {
+	// Marshals 'v' to 'w'
 	Encode(w http.ResponseWriter, req *http.Request, v interface{}) error
 }
 
@@ -83,7 +84,7 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 type EncodePlainText struct{}
 
-// PlainText writes a string to the response, setting the Content-Type as
+// Writes a string to the response, setting the Content-Type as
 // text/plain.
 // vi has to be string
 func (EncodePlainText) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
@@ -113,7 +114,7 @@ func PlainText(w http.ResponseWriter, r *http.Request, v string) {
 
 type EncodeData struct{}
 
-// Data writes raw bytes to the response, setting the Content-Type as
+// Writes raw bytes to the response, setting the Content-Type as
 // application/octet-stream.
 // vi has to be []byte
 func (EncodeData) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
@@ -143,7 +144,7 @@ func Data(w http.ResponseWriter, r *http.Request, v []byte) {
 
 type EncodeHTML struct{}
 
-// HTML writes a string to the response, setting the Content-Type as text/html.
+// Writes a string to the response, setting the Content-Type as text/html.
 // vi has to be a string.
 func (EncodeHTML) Encode(w http.ResponseWriter, r *http.Request, vi interface{}) error {
 	v, ok := vi.(string)
@@ -171,7 +172,7 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 
 type EncodeJSON struct{}
 
-// JSON marshals 'v' to JSON, automatically escaping HTML and setting the
+// Marshals 'v' to JSON, automatically escaping HTML and setting the
 // Content-Type as application/json.
 func (EncodeJSON) Encode(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	buf := &bytes.Buffer{}
@@ -213,7 +214,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 type EncodeXML struct{}
 
-// XML marshals 'v' to XML, setting the Content-Type as application/xml. It
+// Marshals 'v' to XML, setting the Content-Type as application/xml. It
 // will automatically prepend a generic XML header (see encoding/xml.Header) if
 // one is not found in the first 100 bytes of 'v'.
 func (EncodeXML) Encode(w http.ResponseWriter, r *http.Request, v interface{}) error {

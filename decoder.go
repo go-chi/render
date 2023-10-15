@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/ajg/form"
@@ -40,13 +39,13 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 
 // DecodeJSON decodes a given reader into an interface using the json decoder.
 func DecodeJSON(r io.Reader, v interface{}) error {
-	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
+	defer io.Copy(io.Discard, r) //nolint:errcheck
 	return json.NewDecoder(r).Decode(v)
 }
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.
 func DecodeXML(r io.Reader, v interface{}) error {
-	defer io.Copy(ioutil.Discard, r) //nolint:errcheck
+	defer io.Copy(io.Discard, r) //nolint:errcheck
 	return xml.NewDecoder(r).Decode(v)
 }
 

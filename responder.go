@@ -88,12 +88,23 @@ func HTML(w http.ResponseWriter, r *http.Request, v string) {
 	w.Write([]byte(v)) //nolint:errcheck
 }
 
-// JSON marshals 'v' to JSON, automatically escaping HTML and setting the
-// Content-Type as application/json.
-func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
+// JSONEncoderOpt is a function that can set options on the JSON encoder.
+type JSONEncoderOpt func(*json.Encoder)
+
+// UnescapedHTML disables escaping of &, < and > in JSON strings.
+func UnescapedHTML(enc *json.Encoder) {
+	enc.SetEscapeHTML(false)
+}
+
+// JSON marshals 'v' to JSON, automatically escaping HTML by default,
+// and setting the Content-Type as application/json.
+func JSON(w http.ResponseWriter, r *http.Request, v interface{}, opts ...JSONEncoderOpt) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(true)
+	for _, opt := range opts {
+		opt(enc)
+	}
+
 	if err := enc.Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

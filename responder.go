@@ -14,6 +14,12 @@ import (
 // out to a responder. Just a short-hand.
 type M map[string]interface{}
 
+// HTMLer allows for easily represending reponses as HTML strings when accepted content
+// type is text/html
+type HTMLer interface {
+	HTML() string
+}
+
 // Respond is a package-level variable set to our default Responder. We do this
 // because it allows you to set render.Respond to another function with the
 // same function signature, while also utilizing the render.Responder() function
@@ -54,6 +60,13 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 		JSON(w, r, v)
 	case ContentTypeXML:
 		XML(w, r, v)
+	case ContentTypeHTML:
+		htmler, ok := v.(HTMLer)
+		if ok {
+			HTML(w, r, htmler.HTML())
+			return
+		}
+		fallthrough
 	default:
 		JSON(w, r, v)
 	}

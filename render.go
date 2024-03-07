@@ -15,19 +15,31 @@ type Binder interface {
 	Bind(r *http.Request) error
 }
 
-// Bind decodes a request body and executes the Binder method of the
-// payload structure.
-func Bind(r *http.Request, v Binder) error {
+// Bind decodes a request body into a payload structure.
+// If v implements the Binder interface, its Binder method is called.
+func Bind(r *http.Request, v interface{}) error {
+	if v == nil {
+		return nil
+	}
 	if err := Decode(r, v); err != nil {
 		return err
 	}
-	return binder(r, v)
+	if b, ok := v.(Binder); ok {
+		return binder(r, b)
+	}
+	return nil
 }
 
 // Render renders a single payload and respond to the client request.
-func Render(w http.ResponseWriter, r *http.Request, v Renderer) error {
-	if err := renderer(w, r, v); err != nil {
-		return err
+// If v implements the Renderer interface, its Render method is called.
+func Render(w http.ResponseWriter, r *http.Request, v interface{}) error {
+	if v == nil {
+		return nil
+	}
+	if rd, ok := v.(Renderer); ok {
+		if err := renderer(w, r, rd); err != nil {
+			return err
+		}
 	}
 	Respond(w, r, v)
 	return nil

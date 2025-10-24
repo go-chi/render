@@ -16,7 +16,7 @@ type M map[string]interface{}
 
 // Respond is a package-level variable set to our default Responder. We do this
 // because it allows you to set render.Respond to another function with the
-// same function signature, while also utilizing the render.Responder() function
+// same function signature, while also utilizing the DefaultResponder function
 // itself. Effectively, allowing you to easily add your own logic to the package
 // defaults. For example, maybe you want to test if v is an error and respond
 // differently, or log something before you respond.

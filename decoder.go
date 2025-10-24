@@ -12,7 +12,7 @@ import (
 
 // Decode is a package-level variable set to our default Decoder. We do this
 // because it allows you to set render.Decode to another function with the
-// same function signature, while also utilizing the render.Decoder() function
+// same function signature, while also utilizing the DefaultDecoder function
 // itself. Effectively, allowing you to easily add your own logic to the package
 // defaults. For example, maybe you want to impose a limit on the number of
 // bytes allowed to be read from the request body.

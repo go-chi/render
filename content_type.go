@@ -22,6 +22,7 @@ const (
 	ContentTypeXML
 	ContentTypeForm
 	ContentTypeEventStream
+	ContentMsgPack
 )
 
 func GetContentType(s string) ContentType {
@@ -39,6 +40,8 @@ func GetContentType(s string) ContentType {
 		return ContentTypeForm
 	case "text/event-stream":
 		return ContentTypeEventStream
+	case "application/msgpack":
+		return ContentMsgPack
 	default:
 		return ContentTypeUnknown
 	}

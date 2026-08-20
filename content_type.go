@@ -24,6 +24,7 @@ const (
 	ContentTypeEventStream
 )
 
+// GetContentType returns the ContentType parsed from the given MIME media type string.
 func GetContentType(s string) ContentType {
 	s = strings.TrimSpace(strings.Split(s, ";")[0])
 	switch s {
@@ -64,6 +65,8 @@ func GetRequestContentType(r *http.Request) ContentType {
 	return GetContentType(r.Header.Get("Content-Type"))
 }
 
+// GetAcceptedContentType returns the ContentType requested by the client based on
+// the context or the request Accept header.
 func GetAcceptedContentType(r *http.Request) ContentType {
 	if contentType, ok := r.Context().Value(ContentTypeCtxKey).(ContentType); ok {
 		return contentType

@@ -24,7 +24,7 @@ func Bind(r *http.Request, v Binder) error {
 	return binder(r, v)
 }
 
-// Render renders a single payload and respond to the client request.
+// Render renders a single payload and responds to the client request.
 func Render(w http.ResponseWriter, r *http.Request, v Renderer) error {
 	if err := renderer(w, r, v); err != nil {
 		return err

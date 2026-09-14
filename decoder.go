@@ -37,10 +37,15 @@ func DefaultDecoder(r *http.Request, v interface{}) error {
 	return err
 }
 
-// DecodeJSON decodes a given reader into an interface using the json decoder.
+// DecodeJSON decodes a given reader into an interface using encoding/json.
+// json.Unmarshal rejects trailing data after a single value (golang/go#36225);
+// Decoder.Decode does not.
 func DecodeJSON(r io.Reader, v interface{}) error {
-	defer io.Copy(io.Discard, r) //nolint:errcheck
-	return json.NewDecoder(r).Decode(v)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }
 
 // DecodeXML decodes a given reader into an interface using the xml decoder.

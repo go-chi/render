@@ -24,10 +24,35 @@ func Bind(r *http.Request, v Binder) error {
 	return binder(r, v)
 }
 
+// trackingWriter notes whether the Renderer already wrote a response so
+// Render/RenderList can skip the default serializer (see #56).
+type trackingWriter struct {
+	http.ResponseWriter
+	wrote bool
+}
+
+func (w *trackingWriter) Write(b []byte) (int, error) {
+	w.wrote = true
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *trackingWriter) WriteHeader(code int) {
+	w.wrote = true
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *trackingWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 // Render renders a single payload and respond to the client request.
 func Render(w http.ResponseWriter, r *http.Request, v Renderer) error {
-	if err := renderer(w, r, v); err != nil {
+	tw := &trackingWriter{ResponseWriter: w}
+	if err := renderer(tw, r, v); err != nil {
 		return err
+	}
+	if tw.wrote {
+		return nil
 	}
 	Respond(w, r, v)
 	return nil
@@ -35,10 +60,14 @@ func Render(w http.ResponseWriter, r *http.Request, v Renderer) error {
 
 // RenderList renders a slice of payloads and responds to the client request.
 func RenderList(w http.ResponseWriter, r *http.Request, l []Renderer) error {
+	tw := &trackingWriter{ResponseWriter: w}
 	for _, v := range l {
-		if err := renderer(w, r, v); err != nil {
+		if err := renderer(tw, r, v); err != nil {
 			return err
 		}
+	}
+	if tw.wrote {
+		return nil
 	}
 	Respond(w, r, l)
 	return nil

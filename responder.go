@@ -59,13 +59,22 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 }
 
+// writeStatus writes a previously stored Status() hint. A nil request is
+// allowed so wrappers can call JSON/XML/etc. after writing the header themselves.
+func writeStatus(w http.ResponseWriter, r *http.Request) {
+	if r == nil {
+		return
+	}
+	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
+		w.WriteHeader(status)
+	}
+}
+
 // PlainText writes a string to the response, setting the Content-Type as
 // text/plain.
 func PlainText(w http.ResponseWriter, r *http.Request, v string) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
+	writeStatus(w, r)
 	w.Write([]byte(v)) //nolint:errcheck
 }
 
@@ -73,18 +82,14 @@ func PlainText(w http.ResponseWriter, r *http.Request, v string) {
 // application/octet-stream.
 func Data(w http.ResponseWriter, r *http.Request, v []byte) {
 	w.Header().Set("Content-Type", "application/octet-stream")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
+	writeStatus(w, r)
 	w.Write(v) //nolint:errcheck
 }
 
 // HTML writes a string to the response, setting the Content-Type as text/html.
 func HTML(w http.ResponseWriter, r *http.Request, v string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
+	writeStatus(w, r)
 	w.Write([]byte(v)) //nolint:errcheck
 }
 
@@ -100,9 +105,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
+	writeStatus(w, r)
 	w.Write(buf.Bytes()) //nolint:errcheck
 }
 
@@ -117,9 +120,7 @@ func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 
 	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
-	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
+	writeStatus(w, r)
 
 	// Try to find <?xml header in first 100 bytes (just in case there're some XML comments).
 	findHeaderUntil := len(b)

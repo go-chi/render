@@ -95,7 +95,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 	enc := json.NewEncoder(buf)
 	enc.SetEscapeHTML(true)
 	if err := enc.Encode(v); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -112,7 +112,7 @@ func JSON(w http.ResponseWriter, r *http.Request, v interface{}) {
 func XML(w http.ResponseWriter, r *http.Request, v interface{}) {
 	b, err := xml.Marshal(v)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -184,7 +184,7 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 			bytes, err := json.Marshal(v)
 			if err != nil {
-				w.Write([]byte(fmt.Sprintf("event: error\ndata: {\"error\":\"%v\"}\n\n", err))) //nolint:errcheck
+				w.Write([]byte("event: error\ndata: {\"error\":\"Internal Server Error\"}\n\n")) //nolint:errcheck
 				if f, ok := w.(http.Flusher); ok {
 					f.Flush()
 				}

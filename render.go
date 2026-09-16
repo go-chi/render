@@ -90,40 +90,99 @@ func renderer(w http.ResponseWriter, r *http.Request, v Renderer) error {
 	return nil
 }
 
+func asBinder(f reflect.Value) (Binder, bool) {
+	if !f.IsValid() {
+		return nil, false
+	}
+	switch f.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		if f.IsNil() {
+			return nil, false
+		}
+	}
+	if f.Type().Implements(binderType) {
+		if !f.CanInterface() {
+			return nil, false
+		}
+		b, ok := f.Interface().(Binder)
+		return b, ok
+	}
+	if f.CanAddr() && f.Addr().Type().Implements(binderType) {
+		b, ok := f.Addr().Interface().(Binder)
+		return b, ok
+	}
+	if f.CanInterface() && f.Kind() != reflect.Ptr && f.Kind() != reflect.Interface {
+		ptr := reflect.New(f.Type())
+		ptr.Elem().Set(f)
+		if ptr.Type().Implements(binderType) {
+			b, ok := ptr.Interface().(Binder)
+			return b, ok
+		}
+	}
+	return nil, false
+}
+
+func bindValue(r *http.Request, f reflect.Value) error {
+	if !f.IsValid() {
+		return nil
+	}
+	if b, ok := asBinder(f); ok {
+		return binder(r, b)
+	}
+	switch f.Kind() {
+	case reflect.Ptr, reflect.Interface:
+		if f.IsNil() {
+			return nil
+		}
+		return bindValue(r, f.Elem())
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < f.Len(); i++ {
+			if err := bindValue(r, f.Index(i)); err != nil {
+				return err
+			}
+		}
+	case reflect.Map:
+		for _, key := range f.MapKeys() {
+			if err := bindValue(r, f.MapIndex(key)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Executed bottom-up
 func binder(r *http.Request, v Binder) error {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return v.Bind(r)
+		}
 		rv = rv.Elem()
 	}
 
-	// Call Binder on non-struct types right away
-	if rv.Kind() != reflect.Struct {
-		return v.Bind(r)
-	}
-
-	// For structs, we call Bind on each field that implements Binder
-	for i := 0; i < rv.NumField(); i++ {
-		f := rv.Field(i)
-		if f.Type().Implements(binderType) {
-
-			if isNil(f) {
-				continue
+	switch rv.Kind() {
+	case reflect.Struct:
+		for i := 0; i < rv.NumField(); i++ {
+			if err := bindValue(r, rv.Field(i)); err != nil {
+				return err
 			}
-
-			fv := f.Interface().(Binder)
-			if err := binder(r, fv); err != nil {
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < rv.Len(); i++ {
+			if err := bindValue(r, rv.Index(i)); err != nil {
+				return err
+			}
+		}
+	case reflect.Map:
+		for _, key := range rv.MapKeys() {
+			if err := bindValue(r, rv.MapIndex(key)); err != nil {
 				return err
 			}
 		}
 	}
 
-	// We call it bottom-up
-	if err := v.Bind(r); err != nil {
-		return err
-	}
-
-	return nil
+	return v.Bind(r)
 }
 
 var (

@@ -70,9 +70,11 @@ func PlainText(w http.ResponseWriter, r *http.Request, v string) {
 }
 
 // Data writes raw bytes to the response, setting the Content-Type as
-// application/octet-stream.
+// application/octet-stream if not already set.
 func Data(w http.ResponseWriter, r *http.Request, v []byte) {
-	w.Header().Set("Content-Type", "application/octet-stream")
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "application/octet-stream")
+	}
 	if status, ok := r.Context().Value(StatusCtxKey).(int); ok {
 		w.WriteHeader(status)
 	}

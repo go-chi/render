@@ -26,6 +26,13 @@ const (
 
 func GetContentType(s string) ContentType {
 	s = strings.TrimSpace(strings.Split(s, ";")[0])
+	// HTTP media types use ASCII case folding.
+	s = strings.Map(func(r rune) rune {
+		if r >= 'A' && r <= 'Z' {
+			return r + ('a' - 'A')
+		}
+		return r
+	}, s)
 	switch s {
 	case "text/plain":
 		return ContentTypePlainText

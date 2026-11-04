@@ -43,7 +43,12 @@ func DefaultResponder(w http.ResponseWriter, r *http.Request, v interface{}) {
 				channelEventStream(w, r, v)
 				return
 			default:
-				v = channelIntoSlice(w, r, v)
+				items, ok := channelIntoSlice(w, r, v)
+				if !ok {
+					http.Error(w, "Server Timeout", http.StatusGatewayTimeout)
+					return
+				}
+				v = items
 			}
 		}
 	}
@@ -198,8 +203,9 @@ func channelEventStream(w http.ResponseWriter, r *http.Request, v interface{}) {
 	}
 }
 
-// channelIntoSlice buffers channel data into a slice.
-func channelIntoSlice(w http.ResponseWriter, r *http.Request, from interface{}) interface{} {
+// channelIntoSlice buffers channel data into a slice. It reports false if
+// the request context cancels the collection.
+func channelIntoSlice(w http.ResponseWriter, r *http.Request, from interface{}) ([]interface{}, bool) {
 	ctx := r.Context()
 
 	var to []interface{}
@@ -209,12 +215,11 @@ func channelIntoSlice(w http.ResponseWriter, r *http.Request, from interface{}) 
 			{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(from)},
 		}); chosen {
 		case 0: // equivalent to: case <-ctx.Done()
-			http.Error(w, "Server Timeout", http.StatusGatewayTimeout)
-			return nil
+			return nil, false
 
 		default: // equivalent to: case v, ok := <-stream
 			if !ok {
-				return to
+				return to, true
 			}
 			v := recv.Interface()
 

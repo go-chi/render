@@ -73,6 +73,9 @@ func renderer(w http.ResponseWriter, r *http.Request, v Renderer) error {
 	// For structs, we call Render on each field that implements Renderer
 	for i := 0; i < rv.NumField(); i++ {
 		f := rv.Field(i)
+		if !f.CanInterface() {
+			continue
+		}
 		if f.Type().Implements(rendererType) {
 
 			if isNil(f) {
@@ -105,6 +108,9 @@ func binder(r *http.Request, v Binder) error {
 	// For structs, we call Bind on each field that implements Binder
 	for i := 0; i < rv.NumField(); i++ {
 		f := rv.Field(i)
+		if !f.CanInterface() {
+			continue
+		}
 		if f.Type().Implements(binderType) {
 
 			if isNil(f) {
